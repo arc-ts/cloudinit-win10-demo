@@ -1,0 +1,78 @@
+{
+  "builders": [
+    {
+      "type": "virtualbox-iso",
+      "iso_url": "{{user `iso_url`}}",
+      "iso_checksum_type": "{{user `iso_checksum_type`}}",
+      "iso_checksum": "{{user `iso_checksum`}}",
+      "headless": true,
+      "guest_additions_mode": "attach",
+      "boot_wait": "2m",
+      "communicator": "winrm",
+      "winrm_username": "vagrant",
+      "winrm_password": "vagrant",
+      "winrm_timeout": "5h",
+      "shutdown_command": "shutdown /s /t 10 /f /d p:4:1 /c \"Packer Build Shutdown\"",
+      "shutdown_timeout": "1h",
+      "guest_os_type": "Windows10_64",
+      "disk_size": 60000,
+      "floppy_files": [
+        "./answer_files/Autounattend.xml",
+        "./answer_files/unattend.xml",
+        "./resources/sdelete.exe",
+        "./scripts/create_log_dir.ps1",
+        "./scripts/enable_winrm.ps1",
+        "./scripts/fix_network.ps1"
+      ],
+      "vboxmanage": [
+        [
+          "modifyvm",
+          "{{.Name}}",
+          "--memory",
+          "4096"
+        ],
+        [
+          "modifyvm",
+          "{{.Name}}",
+          "--cpus",
+          "2"
+        ]
+      ]
+    }
+  ],
+  "provisioners": [
+    {
+      "type": "powershell",
+      "scripts": [
+        "./scripts/install_vbox_guest_additions.ps1",
+        "./scripts/install_cloudbase_init.ps1"
+      ]
+    },
+    {
+      "type": "file",
+      "source": "./resources/cloudbase-init.conf",
+      "destination": "C:\\Program Files\\Cloudbase Solutions\\Cloudbase-Init\\conf\\cloudbase-init.conf"
+    },
+    {
+      "type": "powershell",
+      "scripts": [
+        "./scripts/enable_RDP.ps1",
+        "./scripts/enable_sysprep.ps1",
+        "./scripts/compact_disk.ps1"
+      ]
+    }
+  ],
+  "post-processors": [
+    {
+      "type": "vagrant",
+      "keep_input_artifact": false,
+      "output": "windows_10.box",
+      "vagrantfile_template": "Vagrantfile.template"
+    }
+  ],
+  "variables": {
+    "iso_url": "http://care.dlservice.microsoft.com/dl/download/1/B/F/1BFE5194-5951-452C-B62C-B2F667F9B86D/14393.0.160715-1616.RS1_RELEASE_CLIENTENTERPRISE_S_EVAL_X64FRE_EN-US.ISO",
+    "iso_checksum_type": "md5",
+    "iso_checksum": "4d4828cb40554278d376f86cbaed0e03"
+  }
+}
